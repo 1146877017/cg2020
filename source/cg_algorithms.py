@@ -5,27 +5,54 @@ def draw_line(p_list, algorithm):
     """绘制线段
 
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 线段的起点和终点坐标
-    :param algorithm: (string) 绘制使用的算法，包括'DDA'和'Bresenham'，此处的'Naive'仅作为示例，测试时不会出现
+    :param algorithm: (string) 绘制使用的算法，包括'DDA'和'Bresenham'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
+    if([x0, y0] == [x1, y1]):
+        return [x0, y0]
     result = []
-    if algorithm == 'Naive':
-        if x0 == x1:
-            if y0 > y1:
-                y0, y1 = y1, y0
-            for y in range(y0, y1 + 1):
-                result.append((x0, y))
+    if algorithm == 'DDA':
+        dx = x1 - x0
+        dy = y1 - y0
+        if(abs(dx) > abs(dy)):
+            steps = abs(dx)
         else:
-            if x0 > x1:
-                x0, y0, x1, y1 = x1, y1, x0, y0
-            k = (y1 - y0) / (x1 - x0)
-            for x in range(x0, x1 + 1):
-                result.append((x, int(y0 + k * (x - x0))))
-    elif algorithm == 'DDA':
+            steps = abs(dy)
+        delta_x = dx / steps
+        delta_y = dy / steps
+        for i in range(steps+1):
+            result.append([int(x0+i*delta_x), int(y0+i*delta_y)])
         pass
     elif algorithm == 'Bresenham':
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx1 = sx2 = 1 if x0 < x1 else -1
+        sy1 = sy2 = 1 if y0 < y1 else -1
+        sx2 = sx1
+        sy2 = sy1
+        if(dx > dy):
+            faststeps = dx
+            slowsteps = dy
+            sy2 = 0
+        else:
+            faststeps = dy
+            slowsteps = dx
+            sx2 = 0
+        err = faststeps//2
+        while True:
+            result.append([x0, y0])
+            if(x0 == x1 and y0 == y1):
+                break
+            err += slowsteps
+            if(err > faststeps):
+                err -= faststeps
+                x0 += sx1
+                y0 += sy1
+            else:
+                x0 += sx2
+                y0 += sy2
         pass
     return result
 
