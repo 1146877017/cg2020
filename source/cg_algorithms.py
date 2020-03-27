@@ -77,7 +77,44 @@ def draw_ellipse(p_list):
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 椭圆的矩形包围框左上角和右下角顶点坐标
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+    result = []
+    a = (x1 - x0)/2
+    b = (y1 - y0)/2
+    mx = int(x0 + a)
+    my = int(y0 + b)
+    sqa = a*a
+    sqb = b*b
+    x = int(0)
+    y = int(b)
+    p1 = sqb - sqa*b + 0.25*sqa
+    while sqb*x < sqa*y:
+        result.append([mx + x, my + y])
+        result.append([mx + x, my - y])
+        result.append([mx - x, my + y])
+        result.append([mx - x, my - y])
+        if p1 < 0:
+            x = x+1
+            p1 = p1 + 2*sqb*x + sqb
+        else:
+            x = x + 1
+            y = y - 1
+            p1 = p1 + 2*sqb*x-2*sqa*y+sqb
+    p2 = sqb*(x+0.5)*(x+0.5)+sqa*(y-1)*(y-1)-sqa*sqb
+    while y >= 0:
+        result.append([mx + x, my + y])
+        result.append([mx + x, my - y])
+        result.append([mx - x, my + y])
+        result.append([mx - x, my - y])
+        if p2 > 0:
+            y = y-1
+            p2 = p2 - 2*sqa*y + sqa
+        else:
+            x = x + 1
+            y = y-1
+            p2 = p2 + 2*sqb*x - 2*sqa*y + sqa
+    return result
 
 
 def draw_curve(p_list, algorithm):

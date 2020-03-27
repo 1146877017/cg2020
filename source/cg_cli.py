@@ -39,6 +39,9 @@ if __name__ == '__main__':
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'ellipse':
+                        pixels = alg.draw_ellipse(p_list)
+                        for x, y in pixels:
+                            canvas[y, x] = color
                         pass
                     elif item_type == 'curve':
                         pass
@@ -66,4 +69,12 @@ if __name__ == '__main__':
                 algorithm = line[n-1]
                 item_dict[item_id] = ['polygon', p_list,
                                       algorithm, np.array(pen_color)]
+            elif line[0] == 'drawEllipse':
+                item_id = line[1]
+                x0 = int(line[2])
+                y0 = int(line[3])
+                x1 = int(line[4])
+                y1 = int(line[5])
+                item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], 'default',
+                                      np.array(pen_color)]
             line = fp.readline()

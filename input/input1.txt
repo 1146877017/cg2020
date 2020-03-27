@@ -1,9 +1,4 @@
 resetCanvas 600 500
 setColor 0 255 0
-drawLine line1 100 300 102 450 Bresenham
-saveCanvas 4
-setColor 255 0 0
-drawLine 666 200 300 400 150 Bresenham
-saveCanvas 5
-drawPolygon P1 100 100 200 200 100 200 Bresenham
-saveCanvas 7
+drawEllipse E1 100 100 106 106
+saveCanvas f
