@@ -8,10 +8,18 @@ def draw_line(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'DDA'和'Bresenham'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
+
+    "对空集的处理"
+    if len(p_list) == 0:
+        return []
+
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
-    if([x0, y0] == [x1, y1]):
-        return [x0, y0]
+
+    "对相同的起始点和终末点的处理"
+    if [x0, y0] == [x1, y1]:
+        return [[x0, y0]]
+
     result = []
     if algorithm == 'DDA':
         dx = x1 - x0
@@ -190,4 +198,71 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
-    pass
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+    if algorithm == 'Cohen-Sutherland':
+        LEFT, RIGHT, TOP, BOTTOM = 1, 2, 4, 8
+
+        def encode(x, y):
+            c = 0
+            if x < x_min:
+                c = c | LEFT
+            elif x > x_max:
+                c = c | RIGHT
+            if y < y_min:
+                c = c | TOP
+            elif y > y_max:
+                c = c | BOTTOM
+            return c
+
+        code0 = encode(x0, y0)
+        code1 = encode(x1, y1)
+
+        while True:
+            if code0 == 0 and code1 == 0:
+                "完全在视窗内：返回裁剪好的线段"
+                return [[x0, y0], [x1, y1]]
+            if code0 & code1 != 0:
+                "完全不在视窗内：返回空集"
+                return []
+
+            "点[x0,y0]在视窗外，否则交换两点"
+            if code0 == 0:
+                x0, y0, x1, y1 = x1, y1, x0, y0
+                code0, code1 = code1, code0
+
+            "计算新点"
+            if LEFT & code0 != 0:
+                if x0 == x1:
+                    y0 = y1
+                else:
+                    y0 = int(y0+(y1-y0)*(x_min - x0)/(x1-x0))
+                x0 = x_min
+            elif RIGHT & code0 != 0:
+                if x0 == x1:
+                    y0 = y1
+                else:
+                    y0 = int(y0+(y1-y0)*(x_max - x0)/(x1-x0))
+                x0 = x_max
+            elif TOP & code0 != 0:
+                if y0 == y1:
+                    x0 = x1
+                else:
+                    x0 = int(x0+(x1-x0)*(y_min - y0)/(y1-y0))
+                y0 = y_min
+            elif BOTTOM & code0 != 0:
+                if y0 == y1:
+                    x0 = x1
+                else:
+                    x0 = int(x0+(x1-x0)*(y_max - y0)/(y1-y0))
+                y0 = y_max
+            "对新点进行编码"
+            code0 = encode(x0, y0)
+
+            "while循环的结束"
+            print([x0, y0], [x1, y1])
+            pass
+    elif algorithm == 'Liang=Barsky':
+        pass
+
+    return ['p', 'p', 'a', 'p']

@@ -1,7 +1,7 @@
 resetCanvas 600 500
 setColor 0 255 0
-drawEllipse E1 100 100 200 300
+drawLine L1 100 100 200 300 DDA
 setColor 255 0 0
-drawEllipse E2 100 100 200 300
-scale E2 150 200 0.5
+drawLine L2 100 100 200 300 DDA
+clip L2 150 150 200 250 Cohen-Sutherland
 saveCanvas f
