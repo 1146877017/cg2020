@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-
 import sys
 import os
 import cg_algorithms as alg
@@ -33,7 +30,8 @@ if __name__ == '__main__':
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[y, x] = color
+                            if 0 <= x < width and 0 <= y < height:
+                                canvas[y, x] = color
                     elif item_type == 'polygon':
                         pixels = alg.draw_polygon(p_list, algorithm)
                         for x, y in pixels:
@@ -42,7 +40,6 @@ if __name__ == '__main__':
                         pixels = alg.draw_ellipse(p_list)
                         for x, y in pixels:
                             canvas[y, x] = color
-                        pass
                     elif item_type == 'curve':
                         pass
                 Image.fromarray(canvas).save(os.path.join(
@@ -77,4 +74,28 @@ if __name__ == '__main__':
                 y1 = int(line[5])
                 item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], 'default',
                                       np.array(pen_color)]
+            elif line[0] == 'translate':
+                item_id = line[1]
+                dx = int(line[2])
+                dy = int(line[3])
+                p_list = item_dict[item_id][1]
+                p_list = alg.translate(p_list, dx, dy)
+                item_dict[item_id][1] = p_list
+            elif line[0] == 'rotate':
+                item_id = line[1]
+                x = int(line[2])
+                y = int(line[3])
+                r = int(line[4])
+                p_list = item_dict[item_id][1]
+                p_list = alg.rotate(p_list, x, y, r)
+                item_dict[item_id][1] = p_list
+            elif line[0] == 'scale':
+                item_id = line[1]
+                x = int(line[2])
+                y = int(line[3])
+                s = float(line[4])
+                p_list = item_dict[item_id][1]
+                p_list = alg.scale(p_list, x, y, s)
+                item_dict[item_id][1] = p_list
+
             line = fp.readline()

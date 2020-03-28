@@ -135,7 +135,12 @@ def translate(p_list, dx, dy):
     :param dy: (int) 垂直方向平移量
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    result = []
+    for x, y in p_list:
+        x += dx
+        y += dy
+        result.append([x, y])
+    return result
 
 
 def rotate(p_list, x, y, r):
@@ -147,7 +152,14 @@ def rotate(p_list, x, y, r):
     :param r: (int) 顺时针旋转角度（°）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    result = []
+    radr = math.radians(r)
+    for xi, yi in p_list:
+        d0 = math.sqrt((xi-x)**2+(yi-y)**2)
+        r0 = math.atan2(yi-y, xi-x)
+        result.append([int(x + d0*math.cos(r0+radr)),
+                       int(y + d0 * math.sin(r0+radr))])
+    return result
 
 
 def scale(p_list, x, y, s):
@@ -159,7 +171,12 @@ def scale(p_list, x, y, s):
     :param s: (float) 缩放倍数
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    result = []
+    for xi, yi in p_list:
+        dx = xi - x
+        dy = yi - y
+        result.append([int(x + s*dx), int(y + s*dy)])
+    return result
 
 
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
