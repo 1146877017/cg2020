@@ -26,21 +26,26 @@ if __name__ == '__main__':
                 save_name = line[1]
                 canvas = np.zeros([height, width, 3], np.uint8)
                 canvas.fill(255)
+
+                def draw(pixels):
+                    for x, y in pixels:
+                        if 0 <= x < width and 0 <= y < height:
+                            canvas[height - y, x] = color
+                    pass
+
                 for item_type, p_list, algorithm, color in item_dict.values():
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
-                        for x, y in pixels:
-                            if 0 <= x < width and 0 <= y < height:
-                                canvas[y, x] = color
+                        draw(pixels)
                     elif item_type == 'polygon':
                         pixels = alg.draw_polygon(p_list, algorithm)
-                        for x, y in pixels:
-                            canvas[y, x] = color
+                        draw(pixels)
                     elif item_type == 'ellipse':
                         pixels = alg.draw_ellipse(p_list)
-                        for x, y in pixels:
-                            canvas[y, x] = color
+                        draw(pixels)
                     elif item_type == 'curve':
+                        pixels = alg.draw_curve(p_list, algorithm)
+                        draw(pixels)
                         pass
                 Image.fromarray(canvas).save(os.path.join(
                     output_dir, save_name + '.bmp'), 'bmp')
@@ -74,6 +79,15 @@ if __name__ == '__main__':
                 y1 = int(line[5])
                 item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], 'default',
                                       np.array(pen_color)]
+            elif line[0] == 'drawCurve':
+                item_id = line[1]
+                n = len(line)
+                p_list = []
+                for i in range(1, n//2):
+                    p_list.append([int(line[i*2]), int(line[i*2+1])])
+                algorithm = line[n-1]
+                item_dict[item_id] = ['curve', p_list,
+                                      algorithm, np.array(pen_color)]
             elif line[0] == 'translate':
                 item_id = line[1]
                 dx = int(line[2])

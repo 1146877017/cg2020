@@ -87,6 +87,10 @@ def draw_ellipse(p_list):
     """
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
+    if x0 > x1:
+        x0, x1 = x1, x0
+    if y0 > y1:
+        y0, y1 = y1, y0
     result = []
     a = (x1 - x0)/2
     b = (y1 - y0)/2
@@ -125,6 +129,66 @@ def draw_ellipse(p_list):
     return result
 
 
+def draw_curve_Bezier(p_list, n):
+    def one_Bezier(x0, x1, t):
+        return (1 - t) * x0 + t*x1
+
+    def n_Bezier(xs, n, k, t):
+        if n == 1:
+            return one_Bezier(xs[k], xs[k + 1], t)
+        else:
+            return (1 - t) * n_Bezier(xs, n-1, k, t) + t*n_Bezier(xs, n-1, k+1, t)
+
+    xs = []
+    ys = []
+    for i in range(n):
+        xs += [p_list[i][0]]
+        ys += [p_list[i][1]]
+    result_xs = []
+    result_ys = []
+    t = 0.0
+    step = 1 / (n * 5000)
+    while t < 1.0:
+        result_xs += [n_Bezier(xs, n - 1, 0, t)]
+        result_ys += [n_Bezier(ys, n - 1, 0, t)]
+        t += step
+    result = []
+    for i in range(len(result_xs)):
+        result += [(int(result_xs[i]), int(result_ys[i]))]
+    result = list(set(result))
+    return result
+
+
+def draw_curve_Bspline(p_list, n):
+    def Bspline(xs, k, t):
+        b0 = 1/6 * ((1-t)**3)
+        b1 = 1/6 * (3*t**3 - 6*t**2 + 4)
+        b2 = 1/6 * (-3*t**3 + 3*t**2 + 3*t + 1)
+        b3 = 1/6 * (t**3)
+        return b0*xs[k] + b1*xs[k+1] + b2 * xs[k+2] + b3 * xs[k+3]
+    result = []
+
+    xs = []
+    ys = []
+    for i in range(n):
+        xs += [p_list[i][0]]
+        ys += [p_list[i][1]]
+    result_xs = []
+    result_ys = []
+    for k in range(0, n-3):
+        t = 0.0
+        step = 1 / 5000
+        while t < 1.0:
+            result_xs += [Bspline(xs, k, t)]
+            result_ys += [Bspline(ys, k, t)]
+            t += step
+    result = []
+    for i in range(len(result_xs)):
+        result += [(int(result_xs[i]), int(result_ys[i]))]
+    result = list(set(result))
+    return result
+
+
 def draw_curve(p_list, algorithm):
     """绘制曲线
 
@@ -132,7 +196,15 @@ def draw_curve(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'（三次均匀B样条曲线，曲线不必经过首末控制点）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    result = []
+    n = len(p_list)
+    if algorithm == 'Bezier':
+        result = draw_curve_Bezier(p_list, n)
+        pass
+    elif algorithm == 'B-spline':
+        result = draw_curve_Bspline(p_list, n)
+    print(result)
+    return result
 
 
 def translate(p_list, dx, dy):
@@ -172,7 +244,6 @@ def rotate(p_list, x, y, r):
 
 def scale(p_list, x, y, s):
     """缩放变换
-
     :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 图元参数
     :param x: (int) 缩放中心x坐标
     :param y: (int) 缩放中心y坐标
@@ -187,9 +258,112 @@ def scale(p_list, x, y, s):
     return result
 
 
+def clip_CohenSutherland(p_list, x_min, y_min, x_max, y_max):
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+
+    LEFT, RIGHT, TOP, BOTTOM = 1, 2, 4, 8
+
+    def encode(x, y):
+        c = 0
+        if x < x_min:
+            c = c | LEFT
+        elif x > x_max:
+            c = c | RIGHT
+        if y < y_min:
+            c = c | TOP
+        elif y > y_max:
+            c = c | BOTTOM
+        return c
+
+    code0 = encode(x0, y0)
+    code1 = encode(x1, y1)
+
+    while True:
+        if code0 == 0 and code1 == 0:
+            "完全在视窗内：返回裁剪好的线段"
+            return [[x0, y0], [x1, y1]]
+        if code0 & code1 != 0:
+            "完全不在视窗内：返回空集"
+            return []
+
+        "点[x0,y0]在视窗外，否则交换两点"
+        if code0 == 0:
+            x0, y0, x1, y1 = x1, y1, x0, y0
+            code0, code1 = code1, code0
+
+        "计算新点"
+        if LEFT & code0 != 0:
+            if x0 == x1:
+                y0 = y1
+            else:
+                y0 = int(y0+(y1-y0)*(x_min - x0)/(x1-x0))
+            x0 = x_min
+        elif RIGHT & code0 != 0:
+            if x0 == x1:
+                y0 = y1
+            else:
+                y0 = int(y0+(y1-y0)*(x_max - x0)/(x1-x0))
+            x0 = x_max
+        elif TOP & code0 != 0:
+            if y0 == y1:
+                x0 = x1
+            else:
+                x0 = int(x0+(x1-x0)*(y_min - y0)/(y1-y0))
+            y0 = y_min
+        elif BOTTOM & code0 != 0:
+            if y0 == y1:
+                x0 = x1
+            else:
+                x0 = int(x0+(x1-x0)*(y_max - y0)/(y1-y0))
+            y0 = y_max
+        "对新点进行编码"
+        code0 = encode(x0, y0)
+
+        "while循环的结束"
+        print([x0, y0], [x1, y1])
+    return ([x0, y0], [x1, y1])
+
+
+def clip_LiangBarsky(p_list, x_min, y_min, x_max, y_max):
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+
+    def _clip(p, q, u) -> int:
+        if(p < 0):
+            r = q/p
+            if(r > u[1]):
+                return False
+            if(r > u[0]):
+                u[0] = r
+                return True
+        elif(p > 0):
+            r = q / p
+            if(r < u[0]):
+                return False
+            if(r < u[1]):
+                u[1] = r
+                return True
+        else:
+            return q >= 0
+
+    u = [0, 1]
+    dx = x1 - x0
+    dy = y1 - y0
+
+    if(_clip(-dx, x0-x_min, u)):
+        if(_clip(dx, x_max - x0, u)):
+            if(_clip(-dy, y0 - y_max, u)):
+                if(_clip(dy, y_min - y0, u)):
+                    nx0, ny0 = x0 + u[0]*dx, y0+u[0]*dy
+                    nx1, ny1 = x0 + u[1]*dx, y0 + u[1]*dy
+                    return ([nx0, ny0], [nx1, ny1])
+        pass
+    return []
+
+
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     """线段裁剪
-
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 线段的起点和终点坐标
     :param x_min: 裁剪窗口左上角x坐标
     :param y_min: 裁剪窗口左上角y坐标
@@ -198,71 +372,9 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
-    x0, y0 = p_list[0]
-    x1, y1 = p_list[1]
+
     if algorithm == 'Cohen-Sutherland':
-        LEFT, RIGHT, TOP, BOTTOM = 1, 2, 4, 8
-
-        def encode(x, y):
-            c = 0
-            if x < x_min:
-                c = c | LEFT
-            elif x > x_max:
-                c = c | RIGHT
-            if y < y_min:
-                c = c | TOP
-            elif y > y_max:
-                c = c | BOTTOM
-            return c
-
-        code0 = encode(x0, y0)
-        code1 = encode(x1, y1)
-
-        while True:
-            if code0 == 0 and code1 == 0:
-                "完全在视窗内：返回裁剪好的线段"
-                return [[x0, y0], [x1, y1]]
-            if code0 & code1 != 0:
-                "完全不在视窗内：返回空集"
-                return []
-
-            "点[x0,y0]在视窗外，否则交换两点"
-            if code0 == 0:
-                x0, y0, x1, y1 = x1, y1, x0, y0
-                code0, code1 = code1, code0
-
-            "计算新点"
-            if LEFT & code0 != 0:
-                if x0 == x1:
-                    y0 = y1
-                else:
-                    y0 = int(y0+(y1-y0)*(x_min - x0)/(x1-x0))
-                x0 = x_min
-            elif RIGHT & code0 != 0:
-                if x0 == x1:
-                    y0 = y1
-                else:
-                    y0 = int(y0+(y1-y0)*(x_max - x0)/(x1-x0))
-                x0 = x_max
-            elif TOP & code0 != 0:
-                if y0 == y1:
-                    x0 = x1
-                else:
-                    x0 = int(x0+(x1-x0)*(y_min - y0)/(y1-y0))
-                y0 = y_min
-            elif BOTTOM & code0 != 0:
-                if y0 == y1:
-                    x0 = x1
-                else:
-                    x0 = int(x0+(x1-x0)*(y_max - y0)/(y1-y0))
-                y0 = y_max
-            "对新点进行编码"
-            code0 = encode(x0, y0)
-
-            "while循环的结束"
-            print([x0, y0], [x1, y1])
-            pass
-    elif algorithm == 'Liang=Barsky':
-        pass
-
-    return ['p', 'p', 'a', 'p']
+        return clip_CohenSutherland(p_list, x_min, y_min, x_max, y_max)
+    elif algorithm == 'Liang-Barsky':
+        return clip_LiangBarsky(p_list, x_min, y_min, x_max, y_max)
+    return []
