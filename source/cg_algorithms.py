@@ -139,6 +139,10 @@ def draw_curve_Bezier(p_list, n):
         else:
             return (1 - t) * n_Bezier(xs, n-1, k, t) + t*n_Bezier(xs, n-1, k+1, t)
 
+    "处理只有一个点的情况"
+    if(n == 1):
+        return p_list
+
     xs = []
     ys = []
     for i in range(n):
@@ -147,7 +151,7 @@ def draw_curve_Bezier(p_list, n):
     result_xs = []
     result_ys = []
     t = 0.0
-    step = 1 / (n * 5000)
+    step = 1 / (n * 500)
     while t < 1.0:
         result_xs += [n_Bezier(xs, n - 1, 0, t)]
         result_ys += [n_Bezier(ys, n - 1, 0, t)]
@@ -166,6 +170,11 @@ def draw_curve_Bspline(p_list, n):
         b2 = 1/6 * (-3*t**3 + 3*t**2 + 3*t + 1)
         b3 = 1/6 * (t**3)
         return b0*xs[k] + b1*xs[k+1] + b2 * xs[k+2] + b3 * xs[k+3]
+
+    "处理点不足四个的情况"
+    if(n <= 3):
+        return []
+
     result = []
 
     xs = []
@@ -177,7 +186,7 @@ def draw_curve_Bspline(p_list, n):
     result_ys = []
     for k in range(0, n-3):
         t = 0.0
-        step = 1 / 5000
+        step = 1 / 500
         while t < 1.0:
             result_xs += [Bspline(xs, k, t)]
             result_ys += [Bspline(ys, k, t)]
@@ -200,10 +209,8 @@ def draw_curve(p_list, algorithm):
     n = len(p_list)
     if algorithm == 'Bezier':
         result = draw_curve_Bezier(p_list, n)
-        pass
     elif algorithm == 'B-spline':
         result = draw_curve_Bspline(p_list, n)
-    print(result)
     return result
 
 
@@ -321,7 +328,6 @@ def clip_CohenSutherland(p_list, x_min, y_min, x_max, y_max):
         code0 = encode(x0, y0)
 
         "while循环的结束"
-        print([x0, y0], [x1, y1])
     return ([x0, y0], [x1, y1])
 
 
